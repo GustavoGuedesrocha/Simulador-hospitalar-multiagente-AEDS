@@ -1,0 +1,3 @@
+enum EstadoJogo {
+  MENU_INICIAL, SIMULACAO, MENU_PAUSA 
+}
