@@ -1,4 +1,4 @@
-EstadoJogo telaAtual = EstadoJogo.MENU_INICIAL;
+EstadoJogo estadoAtual = EstadoJogo.MENU_INICIAL;
 
 // seleção de mapas
 final int MAX_MAPAS_DISPONIVEIS = 5;
@@ -59,7 +59,7 @@ float YBotaoEmpilhado(float yInicial, float altura, float espaco, int indice) {
 
 /* DESENHO DOS MENUS */
 
-void desenhaMenuInicial(){
+void desenharMenuInicial(){
   
   fill(40);
   textAlign(LEFT, TOP);
@@ -139,4 +139,67 @@ void desenharMenuPausa() {
 
 /* LÓGICA DE CLIQUES */
 
-// a implementar..
+boolean clicouRetangulo(float x, float y, float w, float h) {
+  return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
+}
+
+void mousePressed() {
+  
+  if (estadoAtual == EstadoJogo.MENU_INICIAL) {
+
+    for (int i = 0; i < qtdMapas; i++) {
+      if (clicouRetangulo(BOTAO_MAPA_X,
+          YBotaoEmpilhado(BOTAO_MAPA_Y_INICIAL, BOTAO_MAPA_ALTURA, BOTAO_MAPA_ESPACO, i),
+          BOTAO_MAPA_LARGURA, BOTAO_MAPA_ALTURA)) {
+        mapaSelecionado = i;
+      }
+    }
+
+    float yBotaoIniciar = YBotaoEmpilhado(BOTAO_MAPA_Y_INICIAL, BOTAO_MAPA_ALTURA, BOTAO_MAPA_ESPACO, qtdMapas) + 30;
+    if (mapaSelecionado != -1 &&
+        clicouRetangulo(BOTAO_MAPA_X, yBotaoIniciar, BOTAO_INICIAR_LARGURA, BOTAO_INICIAR_ALTURA)) {
+      nomeArquivo = mapasDisponiveis[mapaSelecionado];
+      carregarMapa(nomeArquivo);
+      tempoTotalPausado = 0;
+      estadoAtual = EstadoJogo.SIMULACAO;
+    }
+
+  } else if (estadoAtual == EstadoJogo.MENU_PAUSA) {
+    // Verifica qual dos 3 botões de pausa foi clicado
+    for (int i = 0; i < 3; i++) {
+      float y = YBotaoEmpilhado(height / 2.0 - 40, BOTAO_PAUSA_ALTURA, BOTAO_PAUSA_ESPACO, i);
+      
+      if (clicouRetangulo(width / 2.0 - BOTAO_PAUSA_LARGURA / 2.0, y, BOTAO_PAUSA_LARGURA, BOTAO_PAUSA_ALTURA)) {
+        if (i == 0) continuarSimulacao();
+        else if (i == 1) resetarSimulacao();
+        else if (i == 2) voltarAoMenuInicial();
+      }
+    }
+  }
+}
+
+// Controle de simulação
+void pausarSimulacao() {
+  momentoPausa = millis();
+  estadoAtual = EstadoJogo.MENU_PAUSA;
+}
+
+void continuarSimulacao() {
+  tempoTotalPausado += millis() - momentoPausa;
+  estadoAtual = EstadoJogo.SIMULACAO;
+}
+
+// soft reboot: inicializarEstado() (definida no Main.pde) recria do zero as
+// estruturas de estado de todo mundo
+void resetarSimulacao() {
+  inicializarEstado();
+  carregarMapa(nomeArquivo);
+  estadoAtual = EstadoJogo.SIMULACAO;
+}
+
+void voltarAoMenuInicial() {
+  resetarSimulacao();
+  mapaSelecionado = -1;
+  listarMapas();
+  estadoAtual = EstadoJogo.MENU_INICIAL;
+}
