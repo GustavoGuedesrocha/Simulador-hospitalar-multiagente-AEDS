@@ -3,6 +3,7 @@ class Paciente {
   int id;
   boolean ehPreferencial;
   String senha;
+  int assentoReservado = -1;
   
   Coordenada posicao;
   Coordenada destino;
