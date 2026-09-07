@@ -1,6 +1,13 @@
 final int LARGURA_JANELA = 800;
 final int ALTURA_JANELA = 600;
 
+final float mediaSpawnMillis = 5000;
+
+float tempoProximoSpawn;
+int idProximoPaciente;
+int numNormal, numPreferencial;
+ListaEncadeada<Paciente> pacientes;
+
 String nomeArquivo = "";
 
 void settings() {
@@ -18,9 +25,12 @@ void carregarAssets() {
 }
 
 void inicializarEstado() {
-  // Pessoa 1 — lista de pacientes ativos
-  // pacientes = new ListaEncadeada<Paciente>();
-  // proximoIdPaciente = 1;
+  
+  idProximoPaciente = 1;
+  numNormal = 1;
+  numPreferencial = 1;
+  pacientes = new ListaEncadeada<>();
+  tempoProximoSpawn = millisSimulacao() + gerarProximoSpawn();
 
   // Pessoa 2 — filas de triagem
   // filaTriagemNormal = new Fila();
@@ -44,6 +54,10 @@ void draw() {
       desenharMenuInicial();
       break;
     case SIMULACAO:
+      if(millisSimulacao() > tempoProximoSpawn) {
+        gerarPaciente();
+      }
+      
       desenharSimulacao();
       break;
     case MENU_PAUSA:
@@ -71,4 +85,29 @@ void keyPressed() {
       continuarSimulacao();
     }
   }
+}
+
+float gerarProximoSpawn() {
+  float u = random(0, 1);
+  float proximoSpawn = -mediaSpawnMillis * log(1 - u);
+  return proximoSpawn;
+}
+
+void atualizarIDs(boolean ehPreferencial) {
+  idProximoPaciente++;
+   
+  if(ehPreferencial) {
+    numPreferencial++;
+  } else {
+    numNormal++;
+  }
+}
+
+void gerarPaciente() {
+  Paciente novoPaciente = new Paciente(idProximoPaciente, numNormal, numPreferencial, gerador, totem);
+        
+  atualizarIDs(novoPaciente.ehPreferencial);
+  tempoProximoSpawn = millisSimulacao() + gerarProximoSpawn();
+        
+  pacientes.add(novoPaciente);
 }

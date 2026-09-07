@@ -14,10 +14,15 @@ class Paciente {
   
   EstadoPaciente estado;
   
-  Paciente(int id, String senha, Coordenada posicao, Coordenada destino) {
+  Paciente(int id, int numNormal, int numPreferencial, Coordenada posicao, Coordenada destino) {
     this.id = id;
     this.ehPreferencial = random(1) < 0.25 ? true : false;
-    this.senha = senha;
+    
+    if(ehPreferencial) {
+      this.senha = "P" + numPreferencial;
+    } else {
+      this.senha = "N" + numNormal;
+    }
     
     this.posicao = posicao.copy();
     this.destino = destino.copy();
