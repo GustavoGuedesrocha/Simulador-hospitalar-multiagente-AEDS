@@ -32,9 +32,10 @@ void inicializarEstado() {
   pacientes = new ListaEncadeada<>();
   tempoProximoSpawn = millisSimulacao() + gerarProximoSpawn();
 
-  // Pessoa 2 — filas de triagem
-  // filaTriagemNormal = new Fila();
-  // filaTriagemPreferencial = new Fila();
+  inicializarTotem();
+  // filaTriagemNormal / filaTriagemPreferencial: inicializadas dentro de
+  // inicializarTriagem(), chamada por carregarMapa() em MapaHospital.pde
+  // (precisa rodar DEPOIS que o mapa define qtdEnfermeiros).
 
   // Pessoa 3 — filas médicas por cor
   // filaVermelha = new Fila();
@@ -57,7 +58,11 @@ void draw() {
       if(millisSimulacao() > tempoProximoSpawn) {
         gerarPaciente();
       }
-      
+
+      atualizarTriagem();
+      // atualizarConsulta(), atualizarMovimento() etc. entram aqui também,
+      // conforme o resto do grupo for terminando suas partes.
+
       desenharSimulacao();
       break;
     case MENU_PAUSA:

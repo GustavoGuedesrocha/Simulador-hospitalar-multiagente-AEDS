@@ -21,6 +21,10 @@ Coordenada totem;
 Coordenada[] assentos = new Coordenada[500];
 int qtdAssentos = 0;
 
+enum EstadoAssento { LIVRE, RESERVADO, OCUPADO }
+EstadoAssento[] estadoAssentos = new EstadoAssento[500];
+Paciente[] ocupanteAssento = new Paciente[500];
+
 Coordenada[] enfermeiros = new Coordenada[50];
 int qtdEnfermeiros = 0;
 
@@ -152,7 +156,82 @@ void carregarMapa(String arquivo) {
   }
 
   calcularGeometria();
+
+  // Precisam rodar aqui (e não em inicializarEstado()) porque só agora
+  // qtdAssentos/qtdEnfermeiros refletem o mapa que acabou de ser lido.
+  inicializarAssentos();
+  inicializarTriagem();
+
   println("Mapa carregado com sucesso! Assentos: " + qtdAssentos + ", Enfermeiros: " + qtdEnfermeiros + ", Médicos: " + qtdMedicos);
+}
+
+// Reseta o estado lógico de todos os assentos usados neste mapa.
+// Chamada sempre que um mapa é (re)carregado, garantindo que um reset
+// da simulação também limpe reservas/ocupações antigas.
+void inicializarAssentos() {
+  for (int i = 0; i < qtdAssentos; i++) {
+    estadoAssentos[i] = EstadoAssento.LIVRE;
+    ocupanteAssento[i] = null;
+  }
+}
+
+// Escolhe, entre os assentos livres, o de menor distância real de
+// caminho (via matriz do Wavefront calculada a partir da posição do
+// paciente) usando um insertion sort manual — sem coleções prontas.
+// Retorna o índice do assento reservado, ou -1 se nenhum livre for
+// alcançável.
+int reservarAssentoMaisProximo(Coordenada origem) {
+  WaveFront wavefront = new WaveFront();
+
+  int[] indicesLivres = new int[qtdAssentos];
+  int[] distanciasLivres = new int[qtdAssentos];
+  int n = 0;
+
+  for (int i = 0; i < qtdAssentos; i++) {
+    if (estadoAssentos[i] == EstadoAssento.LIVRE) {
+      ListaEncadeada<Coordenada> caminho = wavefront.encontrarCaminho(mapa, origem, assentos[i]);
+      if (caminho.count() > 0) {
+        indicesLivres[n] = i;
+        distanciasLivres[n] = caminho.count() - 1; // nº de passos até o assento
+        n++;
+      }
+    }
+  }
+
+  // insertion sort manual pela distância (sem coleções prontas)
+  for (int i = 1; i < n; i++) {
+    int idxChave = indicesLivres[i];
+    int distChave = distanciasLivres[i];
+    int j = i - 1;
+    while (j >= 0 && distanciasLivres[j] > distChave) {
+      indicesLivres[j + 1] = indicesLivres[j];
+      distanciasLivres[j + 1] = distanciasLivres[j];
+      j--;
+    }
+    indicesLivres[j + 1] = idxChave;
+    distanciasLivres[j + 1] = distChave;
+  }
+
+  if (n == 0) return -1; // nenhum assento livre alcançável
+
+  int idxEscolhido = indicesLivres[0];
+  estadoAssentos[idxEscolhido] = EstadoAssento.RESERVADO;
+  return idxEscolhido;
+}
+
+// Marca um assento como efetivamente ocupado (chamar quando o paciente
+// chega de fato na célula, não no momento da reserva).
+void ocuparAssento(int idx, Paciente p) {
+  if (idx < 0) return;
+  estadoAssentos[idx] = EstadoAssento.OCUPADO;
+  ocupanteAssento[idx] = p;
+}
+
+// Libera um assento (reservado ou ocupado) de volta para LIVRE.
+void liberarAssento(int idx) {
+  if (idx < 0) return;
+  estadoAssentos[idx] = EstadoAssento.LIVRE;
+  ocupanteAssento[idx] = null;
 }
 
 void calcularGeometria() {
